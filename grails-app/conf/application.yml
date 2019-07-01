@@ -28,6 +28,9 @@ endpoints:
 
 ---
 grails:
+    file:
+        upload:
+            directory: '/tmp'
     mime:
         disable:
             accept:
@@ -65,6 +68,9 @@ grails:
             maxsize: 1000
     controllers:
         defaultScope: singleton
+        upload:
+            maxFileSize: 26214400
+            maxRequestSize: 26214400
     converters:
         encoding: UTF-8
     views:
