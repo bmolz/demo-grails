@@ -13,7 +13,7 @@ class FileUploadController {
 
     FileUploadService fileUploadService
 
-    def upload() {
+    def file() {
         println params
         request.headerNames.each{
             println it
@@ -40,16 +40,23 @@ class FileUploadController {
                     for(filename in request.getFileNames()){
                         println filename
                         MultipartFile file = request.getFile(filename)
-                        println file
+//                        println file
 
-                        String newFilenameBase = UUID.randomUUID().toString()
-                        String originalFileExtension = file.originalFilename.substring(file.originalFilename.lastIndexOf("."))
-                        String newFilename = newFilenameBase + originalFileExtension
-                        String storageDirectory = grailsApplication.config.file.upload.directory?:'/tmp'
+                        def newFilenameBase = UUID.randomUUID().toString()
+                        def originalFileExtension = file.originalFilename.substring(file.originalFilename.lastIndexOf("."))
+                        def newFilename = newFilenameBase + originalFileExtension
+//                        String storageDirectory = grailsApplication.config.file.upload.directory?:'/tmp'
+//                        def storageDirectory = grailsApplication.config.getProperty('uploadDir')
+                        def storageDirectory =  grailsApplication.config.getProperty('localBackend.uploadedFilesDirectory')
+                        println 'storageDirectory'
                         println storageDirectory
 
-                        File newFile = new File("$storageDirectory/$newFilename")
-                        file.transferTo(newFile)
+                        def path = new File(storageDirectory + File.separator, newFilename)
+//                        if (path.getParentFile() != null) {
+//                            println path
+//                            path.getParentFile().mkdirs()
+//                        }
+                        file.transferTo(path)
 
 //                        BufferedImage thumbnail = Scalr.resize(ImageIO.read(newFile), 290);
 //                        String thumbnailFilename = newFilenameBase + '-thumbnail.png'
@@ -58,7 +65,7 @@ class FileUploadController {
 //
                         FileUpload picture = new FileUpload(
                                 fileName: file.originalFilename,
-                                filePath: newFile.absolutePath,
+                                filePath: path.absolutePath,
 //                                thumbnailFilename: thumbnailFilename,
                                 fileSize: file.size
                         ).save()
@@ -81,12 +88,14 @@ class FileUploadController {
         }
     }
 
-    def picture(){
-        def pic = FileUpload.get(params.id)
-        File picFile = new File("${grailsApplication.config.file.upload.directory?:'/tmp'}/${pic.filePath}")
-        response.contentType = 'image/jpeg'
-        response.outputStream << new FileInputStream(picFile)
-        response.outputStream.flush()
+    def picture(Long id){
+        FileUpload pic = FileUpload.get(id)
+//        def storageDirectory = grailsApplication.config.getProperty('uploadDir') ?: '/tmp'
+        File picFile = new File(pic.filePath)
+
+
+//        File picFile = new File("${grailsApplication.config.file.upload.directory?:'/tmp'}/${pic.filePath}")
+        render file: picFile, contentType: 'image/jpeg'
     }
 
     def index(Integer max) {
