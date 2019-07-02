@@ -52,8 +52,8 @@ class FileUploadController {
                         file.transferTo(filePath)
                         println "Writing file to ${filePath}"
 
-                        BufferedImage thumbnail = Scalr.resize(ImageIO.read(filePath), 120);
-                        String thumbnailFilename = newFilenameBase + '-thumbnail.png'
+                        BufferedImage thumbnail = Scalr.resize(ImageIO.read(filePath), 100)
+                        String thumbnailFilename = newFilenameBase + '-thumb.png'
                         File thumbnailFile = new File("$storageDirectory/$thumbnailFilename")
                         ImageIO.write(thumbnail, 'png', thumbnailFile)
 
@@ -108,13 +108,13 @@ class FileUploadController {
         respond fileUploadService.get(id)
     }
 
-    def create() {
+    def create(Long id) {
         respond new FileUpload(params)
     }
 
     def save(FileUpload fileUpload) {
         if (fileUpload == null) {
-            notFound()
+            response.sendError(404)
             return
         }
 
@@ -134,56 +134,44 @@ class FileUploadController {
         }
     }
 
-    def edit(Long id) {
-        respond fileUploadService.get(id)
-    }
+//    def edit(Long id) {
+//        respond fileUploadService.get(id)
+//    }
 
-    def update(FileUpload fileUpload) {
-        if (fileUpload == null) {
-            notFound()
-            return
-        }
-
-        try {
-            fileUploadService.save(fileUpload)
-        } catch (ValidationException e) {
-            respond fileUpload.errors, view:'edit'
-            return
-        }
-
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.updated.message', args: [message(code: 'fileUpload.label', default: 'FileUpload'), fileUpload.id])
-                redirect fileUpload
-            }
-            '*'{ respond fileUpload, [status: OK] }
-        }
-    }
+//    def update(FileUpload fileUpload) {
+//        if (fileUpload == null) {
+//            response.sendError(404)
+//            return
+//        }
+//
+//        try {
+//            fileUploadService.save(fileUpload)
+//        } catch (ValidationException e) {
+//            respond fileUpload.errors, view:'edit'
+//            return
+//        }
+//
+//        request.withFormat {
+//            form multipartForm {
+//                flash.message = message(code: 'default.updated.message', args: [message(code: 'fileUpload.label', default: 'FileUpload'), fileUpload.id])
+//                redirect fileUpload
+//            }
+//            '*'{ respond fileUpload, [status: OK] }
+//        }
+//    }
 
     def delete(Long id) {
         if (id == null) {
-            notFound()
+            response.sendError(404)
             return
         }
-
         fileUploadService.delete(id)
-
         request.withFormat {
             form multipartForm {
                 flash.message = message(code: 'default.deleted.message', args: [message(code: 'fileUpload.label', default: 'FileUpload'), id])
                 redirect action:"index", method:"GET"
             }
             '*'{ render status: NO_CONTENT }
-        }
-    }
-
-    protected void notFound() {
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.not.found.message', args: [message(code: 'fileUpload.label', default: 'FileUpload'), params.id])
-                redirect action: "index", method: "GET"
-            }
-            '*'{ render status: NOT_FOUND }
         }
     }
 }

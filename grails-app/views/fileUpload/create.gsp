@@ -50,10 +50,14 @@
 
 </head>
 <body>
+<g:if test="${!params.id}">
+    <input id="reportName" type="text" placeholder="Enter a name for the Album">
+</g:if>
+
 <!-- The file upload form used as target for the file upload widget -->
 <form id="fileupload" action="https://jquery-file-upload.appspot.com/" method="POST" enctype="multipart/form-data">
     <!-- Redirect browsers with JavaScript disabled to the origin page -->
-    <noscript><input type="hidden" name="redirect" value="https://blueimp.github.io/jQuery-File-Upload/"></noscript>
+    <noscript><input type="hidden" name="redirect" value="${createLink()}"></noscript>
     <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
     <div class="fileupload-buttonbar">
         <div class="fileupload-buttons">
@@ -125,14 +129,14 @@
         <td>
             <span class="preview">
                 {% if (file.thumbnailUrl) { %}
-                    <a href="{%=file.url%}" title="{%=file.name%}" data-gallery><img src="{%=file.thumbnailUrl%}"></a>
+                    <a href="{%=file.thumbnailUrl%}" title="{%=file.name%}" data-gallery><img src="{%=file.thumbnailUrl%}"></a>
                 {% } %}
             </span>
         </td>
         <td>
             {% if (window.innerWidth > 480 || !file.thumbnailUrl) { %}
                 <p class="name">
-                    <a href="{%=file.url%}" title="{%=file.name%}" {%=file.thumbnailUrl?'data-gallery':''%}>{%=file.name%}</a>
+                    <a href="{%=file.url%}" title="{%=file.name%}" {%=file.url?'data-gallery':''%}>{%=file.name%}</a>
                 </p>
             {% } %}
             {% if (file.error) { %}
@@ -152,6 +156,8 @@
 <script>
     $(function () {
         'use strict';
+        var reportId = "${params.id ?: 'none'}";
+
         // Initialize the jQuery File Upload widget:
         $('#fileupload').fileupload({
             // Uncomment the following to send cross-domain cookies:
@@ -159,7 +165,7 @@
             url: '${createLink(controller: 'fileUpload', action:'file', absolute: true)}'
         }).bind('fileuploadsend', function (e, data) {
             // modify url to post to
-            // console.log('sending');
+            console.log('sending');
             // data.url='upload/1';
             // return false;
         });
