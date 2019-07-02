@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/html">
 <head>
     %{--        changed to main2 to avoid jquery conflict, should update jquery--}%
     <meta name="layout" content="main2" />
@@ -30,34 +30,23 @@
     <script src="https://blueimp.github.io/Gallery/js/jquery.blueimp-gallery.min.js"></script>
     <!-- The Iframe Transport is required for browsers without support for XHR file uploads -->
     <asset:javascript src="blueimp/jquery.iframe-transport.js"/>
-    %{--<script src="js/jquery.iframe-transport.js"></script>--}%
     <!-- The basic File Upload plugin -->
     <asset:javascript src="blueimp/jquery.fileupload.js"/>
-    %{--<script src="js/jquery.fileupload.js"></script>--}%
     <!-- The File Upload processing plugin -->
     <asset:javascript src="blueimp/jquery.fileupload-process.js"/>
-    %{--<script src="js/jquery.fileupload-process.js"></script>--}%
     <!-- The File Upload image preview & resize plugin -->
     <asset:javascript src="blueimp/jquery.fileupload-image.js"/>
-    %{--<script src="js/jquery.fileupload-image.js"></script>--}%
     <!-- The File Upload audio preview plugin -->
     <asset:javascript src="blueimp/jquery.fileupload-audio.js"/>
-    %{--<script src="js/jquery.fileupload-audio.js"></script>--}%
     <!-- The File Upload video preview plugin -->
     <asset:javascript src="blueimp/jquery.fileupload-video.js"/>
-    %{--<script src="js/jquery.fileupload-video.js"></script>--}%
     <!-- The File Upload validation plugin -->
     <asset:javascript src="blueimp/jquery.fileupload-validate.js"/>
-    %{--<script src="js/jquery.fileupload-validate.js"></script>--}%
     <!-- The File Upload user interface plugin -->
     <asset:javascript src="blueimp/jquery.fileupload-ui.js"/>
-    %{--<script src="js/jquery.fileupload-ui.js"></script>--}%
     <!-- The File Upload jQuery UI plugin -->
     <asset:javascript src="blueimp/jquery.fileupload-jquery-ui.js"/>
-    %{--<script src="js/jquery.fileupload-jquery-ui.js"></script>--}%
-    <!-- The main application script -->
-    %{--        <asset:javascript src="blueimp/main.js"/>--}%
-    %{--<script src="js/main.js"></script>--}%
+
 
 </head>
 <body>
@@ -120,7 +109,7 @@
         </td>
         <td>
             {% if (!i && !o.options.autoUpload) { %}
-                <button class="start" disabled>Start</button>
+                <button class="start" disabled hidden>Start</button>
             {% } %}
             {% if (!i) { %}
                 <button class="cancel">Cancel</button>
@@ -136,14 +125,14 @@
         <td>
             <span class="preview">
                 {% if (file.thumbnailUrl) { %}
-                    <a href="{%=file.url%}" title="{%=file.name%}" download="{%=file.name%}" data-gallery><img src="{%=file.thumbnailUrl%}"></a>
+                    <a href="{%=file.url%}" title="{%=file.name%}" data-gallery><img src="{%=file.thumbnailUrl%}"></a>
                 {% } %}
             </span>
         </td>
         <td>
             {% if (window.innerWidth > 480 || !file.thumbnailUrl) { %}
                 <p class="name">
-                    <a href="{%=file.url%}" title="{%=file.name%}" download="{%=file.name%}" {%=file.thumbnailUrl?'data-gallery':''%}>{%=file.name%}</a>
+                    <a href="{%=file.url%}" title="{%=file.name%}" {%=file.thumbnailUrl?'data-gallery':''%}>{%=file.name%}</a>
                 </p>
             {% } %}
             {% if (file.error) { %}
@@ -188,8 +177,6 @@
             $(this).fileupload('option', 'done')
                 .call(this, $.Event('done'), {result: result});
         });
-        // }
-
     });
 </script>
 </body>

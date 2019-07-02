@@ -1,23 +1,27 @@
 package demo.grails
 
 import grails.converters.JSON
+import grails.gorm.transactions.Transactional
 import grails.validation.ValidationException
+
+import java.nio.file.Files
+import java.nio.file.Paths
+
 import static org.springframework.http.HttpStatus.*
 import org.springframework.web.multipart.MultipartHttpServletRequest
 import org.springframework.web.multipart.MultipartFile
 import java.awt.image.BufferedImage
-//import org.imgscalr.Scalr
 import javax.imageio.ImageIO
+import org.imgscalr.Scalr
 
+
+@Transactional
 class FileUploadController {
 
     FileUploadService fileUploadService
 
     def file() {
         println params
-        request.headerNames.each{
-            println it
-        }
         switch(request.method){
             case "GET":
                 def results = []
@@ -36,66 +40,63 @@ class FileUploadController {
             case "POST":
                 def results = [files: []]
                 if (request instanceof MultipartHttpServletRequest){
-                    println request
                     for(filename in request.getFileNames()){
-                        println filename
                         MultipartFile file = request.getFile(filename)
-//                        println file
-
                         def newFilenameBase = UUID.randomUUID().toString()
                         def originalFileExtension = file.originalFilename.substring(file.originalFilename.lastIndexOf("."))
                         def newFilename = newFilenameBase + originalFileExtension
-//                        String storageDirectory = grailsApplication.config.file.upload.directory?:'/tmp'
-//                        def storageDirectory = grailsApplication.config.getProperty('uploadDir')
-                        def storageDirectory =  grailsApplication.config.getProperty('localBackend.uploadedFilesDirectory')
-                        println 'storageDirectory'
-                        println storageDirectory
+                        def storageDirectory =  grailsApplication.config.getProperty('localBackend.uploadedFilesDirectory') ?:
+                                System.getProperty("user.home") + File.separator + 'tmp' + File.separator
+                        File filePath = new File(storageDirectory, newFilename)
+                        Files.createDirectories(Paths.get(filePath.parent))
+                        file.transferTo(filePath)
+                        println "Writing file to ${filePath}"
 
-                        def path = new File(storageDirectory + File.separator, newFilename)
-//                        if (path.getParentFile() != null) {
-//                            println path
-//                            path.getParentFile().mkdirs()
-//                        }
-                        file.transferTo(path)
+                        BufferedImage thumbnail = Scalr.resize(ImageIO.read(filePath), 120);
+                        String thumbnailFilename = newFilenameBase + '-thumbnail.png'
+                        File thumbnailFile = new File("$storageDirectory/$thumbnailFilename")
+                        ImageIO.write(thumbnail, 'png', thumbnailFile)
 
-//                        BufferedImage thumbnail = Scalr.resize(ImageIO.read(newFile), 290);
-//                        String thumbnailFilename = newFilenameBase + '-thumbnail.png'
-//                        File thumbnailFile = new File("$storageDirectory/$thumbnailFilename")
-//                        ImageIO.write(thumbnail, 'png', thumbnailFile)
-//
-                        FileUpload picture = new FileUpload(
+                        FileUpload upload = new FileUpload(
                                 fileName: file.originalFilename,
-                                filePath: path.absolutePath,
-//                                thumbnailFilename: thumbnailFilename,
+                                filePath: filePath.absolutePath,
+                                thumbPath: thumbnailFile.absolutePath,
                                 fileSize: file.size
                         ).save()
 
-
-                        results.files << [
-                                name: picture.fileName,
-                                size: picture.fileSize,
-                                url: createLink(controller:'fileUpload', action:'picture', id: picture.id, absolute: true),
-                                thumbnail_url: createLink(controller:'fileUpload', action:'picture', id: picture.id, absolute: true),
-                                delete_url: createLink(controller:'fileUpload', action:'delete', id: picture.id, absolute: true),
-                                delete_type: "DELETE"
-                        ]
+                        if (upload.hasErrors()) {
+                            results.files << [
+                                    name: upload.fileName,
+                                    error: upload.errors
+                            ]
+                        } else {
+                            results.files << [
+                                    name: upload.fileName,
+                                    size: upload.fileSize,
+                                    url: createLink(controller:'fileUpload', action:'picture', id: upload.id, absolute: true),
+                                    thumbnailUrl: createLink(controller:'fileUpload', action:'thumb', id: upload.id, absolute: true),
+                                    deleteUrl: createLink(controller:'fileUpload', action:'delete', id: upload.id, absolute: true),
+                                    deleteType: "DELETE",
+                            ]
+                        }
                     }
                 }
-
                 render results as JSON
-                break;
+                break
             default: render status: HttpStatus.METHOD_NOT_ALLOWED.value()
         }
     }
 
     def picture(Long id){
-        FileUpload pic = FileUpload.get(id)
-//        def storageDirectory = grailsApplication.config.getProperty('uploadDir') ?: '/tmp'
+        def pic = FileUpload.get(id)
         File picFile = new File(pic.filePath)
-
-
-//        File picFile = new File("${grailsApplication.config.file.upload.directory?:'/tmp'}/${pic.filePath}")
         render file: picFile, contentType: 'image/jpeg'
+    }
+
+    def thumb(Long id){
+        def pic = FileUpload.get(id)
+        File picFile = new File(pic.thumbPath)
+        render file: picFile, contentType: 'image/png'
     }
 
     def index(Integer max) {
