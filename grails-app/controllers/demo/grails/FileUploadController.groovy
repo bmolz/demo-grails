@@ -22,7 +22,8 @@ class FileUploadController {
 
     def file(Long id) {
         println params
-        if(!id) {
+        def album = Album.get(id)
+        if(!album) {
             response.sendError(404)
             return
         }
@@ -51,7 +52,7 @@ class FileUploadController {
                         def originalFileExtension = file.originalFilename.substring(file.originalFilename.lastIndexOf("."))
                         def newFilename = newFilenameBase + originalFileExtension
                         def storageDirectory =  grailsApplication.config.getProperty('localBackend.uploadedFilesDirectory') ?:
-                                System.getProperty("user.home") + File.separator + 'tmp' + File.separator
+                                System.getProperty("user.home") + File.separator + 'tmp' + File.separator + album.id + File.separator
                         File filePath = new File(storageDirectory, newFilename)
                         Files.createDirectories(Paths.get(filePath.parent))
                         file.transferTo(filePath)
@@ -66,8 +67,10 @@ class FileUploadController {
                                 fileName: file.originalFilename,
                                 filePath: filePath.absolutePath,
                                 thumbPath: thumbnailFile.absolutePath,
-                                fileSize: file.size
-                        ).save()
+                                fileSize: file.size,
+                                album: album
+                        ).save(failOnError: true)
+//                        album.addToFiles(upload).save(flush: true) // flush due due to simultaneous multiple writes to same album
 
                         if (upload.hasErrors()) {
                             results.files << [
@@ -94,12 +97,20 @@ class FileUploadController {
 
     def picture(Long id){
         def pic = FileUpload.get(id)
+        if(!pic) {
+            response.sendError(404)
+            return
+        }
         File picFile = new File(pic.filePath)
         render file: picFile, contentType: 'image/jpeg'
     }
 
     def thumb(Long id){
         def pic = FileUpload.get(id)
+        if(!pic) {
+            response.sendError(404)
+            return
+        }
         File picFile = new File(pic.thumbPath)
         render file: picFile, contentType: 'image/png'
     }

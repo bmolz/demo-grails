@@ -55,9 +55,9 @@
 </g:if>
 
 <!-- The file upload form used as target for the file upload widget -->
-<form id="fileupload" action="https://jquery-file-upload.appspot.com/" method="POST" enctype="multipart/form-data">
+<form id="fileupload" enctype="multipart/form-data">
     <!-- Redirect browsers with JavaScript disabled to the origin page -->
-    <noscript><input type="hidden" name="redirect" value="${createLink()}"></noscript>
+%{--    <noscript><input type="hidden" name="redirect" value="${createLink()}"></noscript>--}%
     <!-- The fileupload-buttonbar contains buttons to add/delete files and start/cancel the upload -->
     <div class="fileupload-buttonbar">
         <div class="fileupload-buttons">
@@ -157,6 +157,7 @@
 </script>
 <script>
     var reportId = "${params.id ?: 'none'}";
+    var running = false;
 
     $(function () {
         'use strict'; //required for blueimp upload
@@ -166,29 +167,37 @@
                 {"name": "Album1"}).done(
                 function( data ) {
                     reportId = data.id;
+                    window.setInterval(function(){
+                            console.log('click submit');
+                            if(!running){
+                                running = true;
+                                $('#fileupload-submit').trigger('click');
+                            }
+                        },
+                        3000);
             });
-
         }
 
         // Initialize the jQuery File Upload widget:
         $('#fileupload').fileupload({
             url: '${createLink(controller: 'fileUpload', action:'file', absolute: true)}',
+            sequentialUploads: true,
             maxRetries: 100,
             retryTimeout: 500,
             fail: function (e, data) {
                 // jQuery Widget Factory uses "namespace-widgetname" since version 1.10.0:
                 var fu = $(this).data('blueimp-fileupload') || $(this).data('fileupload'),
-                    retries = data.context.data('retries') || 0,
-                    retry = function () {
-                        console.log('retry');
-                        data.submit();
-                    };
+                    retries = data.context.data('retries') || 0;//,
+                    // retry = function () {
+                    //     console.log('retry');
+                    //     data.submit();
+                    // };
                 if (data.errorThrown !== 'abort' &&
                     data.uploadedBytes < data.files[0].size &&
                     retries < fu.options.maxRetries) {
                     retries += 1;
                     data.context.data('retries', retries);
-                    window.setTimeout(retry, retries * fu.options.retryTimeout);
+                    // window.setTimeout(retry, retries * fu.options.retryTimeout);
                     return;
                 }
                 data.context.removeData('retries');
@@ -209,6 +218,16 @@
                 }
                 console.log('post to ' + data.url);
                 // modify url to post to
+            })
+            .bind('fileuploadprocessstop', function (e, data) {
+                console.log('fileuploadstop');
+                // data.submit();
+                // $('#fileupload-submit').trigger('click');
+                // window.setTimeout(function(){
+                //         console.log('click submit');
+                //         $('#fileupload-submit').trigger('click');
+                //     },
+                //     2000);
             })
         ;
 

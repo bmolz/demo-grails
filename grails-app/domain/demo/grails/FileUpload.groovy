@@ -6,6 +6,7 @@ class FileUpload {
     Number fileSize
     String filePath
     String thumbPath
+    Album album
 
     static constraints = {
     }
