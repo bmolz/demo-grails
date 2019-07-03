@@ -20,8 +20,13 @@ class FileUploadController {
 
     FileUploadService fileUploadService
 
-    def file() {
+    def file(Long id) {
         println params
+        if(!id) {
+            response.sendError(404)
+            return
+        }
+
         switch(request.method){
             case "GET":
                 def results = []

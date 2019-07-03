@@ -1,5 +1,6 @@
 package demo.grails
 
+import grails.converters.JSON
 import grails.validation.ValidationException
 import static org.springframework.http.HttpStatus.*
 
@@ -23,6 +24,8 @@ class AlbumController {
     }
 
     def save(Album album) {
+        println 'save album'
+        println params
         if (album == null) {
             notFound()
             return
@@ -35,13 +38,15 @@ class AlbumController {
             return
         }
 
-        request.withFormat {
-            form multipartForm {
-                flash.message = message(code: 'default.created.message', args: [message(code: 'album.label', default: 'Album'), album.id])
-                redirect album
-            }
-            '*' { respond album, [status: CREATED] }
-        }
+        render album as JSON
+
+//        request.withFormat {
+//            form multipartForm {
+//                flash.message = message(code: 'default.created.message', args: [message(code: 'album.label', default: 'Album'), album.id])
+//                redirect album
+//            }
+//            '*' { respond album, [status: CREATED] }
+//        }
     }
 
     def edit(Long id) {

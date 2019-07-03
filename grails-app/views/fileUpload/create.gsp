@@ -66,7 +66,7 @@
                 <span>Add files...</span>
                 <input type="file" name="files[]" multiple>
             </button>
-            <button type="submit" class="start">Start upload</button>
+            <button id="fileupload-submit" type="submit" class="start">Start upload</button>
             <button type="reset" class="cancel">Cancel upload</button>
             <button type="button" class="delete">Delete</button>
             <input type="checkbox" class="toggle">
@@ -82,18 +82,20 @@
         </div>
     </div>
     <!-- The table listing the files available for upload/download -->
-    <table role="presentation"><tbody class="files"></tbody></table>
+    <table role="presentation">
+        <tbody class="files" id="fileList"></tbody>
+    </table>
 </form>
 <!-- The blueimp Gallery widget -->
-<div id="blueimp-gallery" class="blueimp-gallery blueimp-gallery-controls" data-filter=":even">
-    <div class="slides"></div>
-    <h3 class="title"></h3>
-    <a class="prev">‹</a>
-    <a class="next">›</a>
-    <a class="close">×</a>
-    <a class="play-pause"></a>
-    <ol class="indicator"></ol>
-</div>
+%{--<div id="blueimp-gallery" class="blueimp-gallery blueimp-gallery-controls" data-filter=":even">--}%
+%{--    <div class="slides"></div>--}%
+%{--    <h3 class="title"></h3>--}%
+%{--    <a class="prev">‹</a>--}%
+%{--    <a class="next">›</a>--}%
+%{--    <a class="close">×</a>--}%
+%{--    <a class="play-pause"></a>--}%
+%{--    <ol class="indicator"></ol>--}%
+%{--</div>--}%
 <!-- The template to display files available for upload -->
 <script id="template-upload" type="text/x-tmpl">
 {% for (var i=0, file; file=o.files[i]; i++) { %}
@@ -154,39 +156,61 @@
 {% } %}
 </script>
 <script>
+    var reportId = "${params.id ?: 'none'}";
+
     $(function () {
         'use strict'; //required for blueimp upload
-        var reportId = "${params.id ?: 'none'}";
+
         function getReportId() {
-            $.post("${createLink(controller: 'fileUpload', action:'file', absolute: true)}",
-                { name: "Album1"}).done(
+            $.post("${createLink(controller: 'Album', action:'save', absolute: true)}",
+                {"name": "Album1"}).done(
                 function( data ) {
-                console.log('getReportId');
-                console.log(data);
-                reportId = data;
+                    reportId = data.id;
             });
+
         }
 
         // Initialize the jQuery File Upload widget:
         $('#fileupload').fileupload({
-            url: '${createLink(controller: 'fileUpload', action:'file', absolute: true)}'
-        }).bind('fileuploadsend', function (e, data) {
-            // modify url to post to
-            console.log('send');
+            url: '${createLink(controller: 'fileUpload', action:'file', absolute: true)}',
+            maxRetries: 100,
+            retryTimeout: 500,
+            fail: function (e, data) {
+                // jQuery Widget Factory uses "namespace-widgetname" since version 1.10.0:
+                var fu = $(this).data('blueimp-fileupload') || $(this).data('fileupload'),
+                    retries = data.context.data('retries') || 0,
+                    retry = function () {
+                        console.log('retry');
+                        data.submit();
+                    };
+                if (data.errorThrown !== 'abort' &&
+                    data.uploadedBytes < data.files[0].size &&
+                    retries < fu.options.maxRetries) {
+                    retries += 1;
+                    data.context.data('retries', retries);
+                    window.setTimeout(retry, retries * fu.options.retryTimeout);
+                    return;
+                }
+                data.context.removeData('retries');
+                $.blueimp.fileupload.prototype
+                    .options.fail.call(this, e, data);
+            }
+        })
+            .bind('fileuploadsubmit', function (e, data) {
+            console.log('submit');
             if(reportId === 'none') {
                 reportId = 'requested';
-                // TODO
                 getReportId();
-                console.log('none reportId');
-                return false;
-            } else if (reportId === 'requested') {
-                console.log('requested reportId');
-                return false;
-            } else {
-                data.url = '${createLink(controller: 'fileUpload', action:'file', absolute: true)}/' + reportId.toString();
-                console.log(data.url);
             }
-        });
+        })
+            .bind('fileuploadsend', function (e, data) {
+                if(reportId !== 'none' && reportId !== 'requested') {
+                    data.url = '${createLink(controller: 'fileUpload', action:'file', absolute: true)}/' + reportId.toString();
+                }
+                console.log('post to ' + data.url);
+                // modify url to post to
+            })
+        ;
 
         // Load existing files:
         if(reportId !== 'none') {
@@ -203,6 +227,27 @@
             });
         }
     });
+
+    // // url helper function
+    // // From http://stackoverflow.com/a/10997390/11236
+    // function updateURLParameter(url, param, paramVal){
+    //     let newAdditionalURL = "";
+    //     let tempArray = url.split("?");
+    //     let baseURL = tempArray[0];
+    //     let additionalURL = tempArray[1];
+    //     let temp = "";
+    //     if (additionalURL) {
+    //         tempArray = additionalURL.split("&");
+    //         for (let i=0; i<tempArray.length; i++){
+    //             if(tempArray[i].split('=')[0] !== param){
+    //                 newAdditionalURL += temp + tempArray[i];
+    //                 temp = "&";
+    //             }
+    //         }
+    //     }
+    //     let rows_txt = temp + "" + param + "=" + paramVal;
+    //     return baseURL + "?" + newAdditionalURL + rows_txt;
+    // }
 </script>
 </body>
 </html>
