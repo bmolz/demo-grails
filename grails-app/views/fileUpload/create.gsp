@@ -155,34 +155,53 @@
 </script>
 <script>
     $(function () {
-        'use strict';
+        'use strict'; //required for blueimp upload
         var reportId = "${params.id ?: 'none'}";
+        function getReportId() {
+            $.post("${createLink(controller: 'fileUpload', action:'file', absolute: true)}",
+                { name: "Album1"}).done(
+                function( data ) {
+                console.log('getReportId');
+                console.log(data);
+                reportId = data;
+            });
+        }
 
         // Initialize the jQuery File Upload widget:
         $('#fileupload').fileupload({
-            // Uncomment the following to send cross-domain cookies:
-            //xhrFields: {withCredentials: true},
             url: '${createLink(controller: 'fileUpload', action:'file', absolute: true)}'
         }).bind('fileuploadsend', function (e, data) {
             // modify url to post to
-            console.log('sending');
-            // data.url='upload/1';
-            // return false;
+            console.log('send');
+            if(reportId === 'none') {
+                reportId = 'requested';
+                // TODO
+                getReportId();
+                console.log('none reportId');
+                return false;
+            } else if (reportId === 'requested') {
+                console.log('requested reportId');
+                return false;
+            } else {
+                data.url = '${createLink(controller: 'fileUpload', action:'file', absolute: true)}/' + reportId.toString();
+                console.log(data.url);
+            }
         });
+
         // Load existing files:
-        $('#fileupload').addClass('fileupload-processing');
-        $.ajax({
-            // Uncomment the following to send cross-domain cookies:
-            //xhrFields: {withCredentials: true},
-            url: $('#fileupload').fileupload('option', 'url'),
-            dataType: 'json',
-            context: $('#fileupload')[0]
-        }).always(function () {
-            $(this).removeClass('fileupload-processing');
-        }).done(function (result) {
-            $(this).fileupload('option', 'done')
-                .call(this, $.Event('done'), {result: result});
-        });
+        if(reportId !== 'none') {
+            $('#fileupload').addClass('fileupload-processing');
+            $.ajax({
+                url: $('#fileupload').fileupload('option', 'url'),
+                dataType: 'json',
+                context: $('#fileupload')[0]
+            }).always(function () {
+                $(this).removeClass('fileupload-processing');
+            }).done(function (result) {
+                $(this).fileupload('option', 'done')
+                    .call(this, $.Event('done'), {result: result});
+            });
+        }
     });
 </script>
 </body>
