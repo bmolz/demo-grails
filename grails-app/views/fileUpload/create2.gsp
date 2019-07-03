@@ -43,7 +43,7 @@
 
     function getReportId() {
         $.post("${createLink(controller: 'Album', action:'save', absolute: true)}",
-            {"name": "Album1"}).done(
+            {"name": $('#reportName').val()}).done(
             function (data) {
                 reportId = data.id;
             });
