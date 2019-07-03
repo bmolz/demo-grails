@@ -22,6 +22,8 @@ class FileUploadController {
 
     def file(Long id) {
         println params
+        println request
+        println request.parts
         def album = Album.get(id)
         if(!album) {
             response.sendError(404)
@@ -46,6 +48,9 @@ class FileUploadController {
             case "POST":
                 def results = [files: []]
                 if (request instanceof MultipartHttpServletRequest){
+                    println request.getFile()
+                    println request.getFileMap()
+                    println request.getFileNames()
                     for(filename in request.getFileNames()){
                         MultipartFile file = request.getFile(filename)
                         def newFilenameBase = UUID.randomUUID().toString()
@@ -125,6 +130,10 @@ class FileUploadController {
     }
 
     def create(Long id) {
+        respond new FileUpload(params)
+    }
+
+    def create2(Long id) {
         respond new FileUpload(params)
     }
 
