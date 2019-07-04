@@ -33,7 +33,7 @@ class FileUploadController {
         switch(request.method){
             case "GET":
                 def results = []
-                FileUpload.findAll().each { it ->
+                FileUpload.findAllByAlbum(album).each { it ->
                     results << [
                             name: it.fileName,
                             size: it.fileSize,
@@ -57,16 +57,16 @@ class FileUploadController {
                         def originalFileExtension = file.originalFilename.substring(file.originalFilename.lastIndexOf("."))
                         def newFilename = newFilenameBase + originalFileExtension
                         def storageDirectory =  grailsApplication.config.getProperty('localBackend.uploadedFilesDirectory') ?:
-                                System.getProperty("user.home") + File.separator + 'tmp' + File.separator + album.id + File.separator
+                                System.getProperty("user.dir") + File.separator + 'tmp' + File.separator + album.id + File.separator
                         File filePath = new File(storageDirectory, newFilename)
                         Files.createDirectories(Paths.get(filePath.parent))
                         file.transferTo(filePath)
                         println "Writing file to ${filePath}"
 
-                        BufferedImage thumbnail = Scalr.resize(ImageIO.read(filePath), 100)
+//                        BufferedImage thumbnail = Scalr.resize(ImageIO.read(filePath), 100)
                         String thumbnailFilename = newFilenameBase + '-thumb.png'
                         File thumbnailFile = new File("$storageDirectory/$thumbnailFilename")
-                        ImageIO.write(thumbnail, 'png', thumbnailFile)
+//                        ImageIO.write(thumbnail, 'png', thumbnailFile)
 
                         FileUpload upload = new FileUpload(
                                 fileName: file.originalFilename,
@@ -86,10 +86,10 @@ class FileUploadController {
                             results.files << [
                                     name: upload.fileName,
                                     size: upload.fileSize,
-                                    url: createLink(controller:'fileUpload', action:'picture', id: upload.id, absolute: true),
-                                    thumbnailUrl: createLink(controller:'fileUpload', action:'thumb', id: upload.id, absolute: true),
-                                    deleteUrl: createLink(controller:'fileUpload', action:'delete', id: upload.id, absolute: true),
-                                    deleteType: "DELETE",
+//                                    url: createLink(controller:'fileUpload', action:'picture', id: upload.id, absolute: true),
+//                                    thumbnailUrl: createLink(controller:'fileUpload', action:'thumb', id: upload.id, absolute: true),
+//                                    deleteUrl: createLink(controller:'fileUpload', action:'delete', id: upload.id, absolute: true),
+//                                    deleteType: "DELETE",
                             ]
                         }
                     }
@@ -134,7 +134,7 @@ class FileUploadController {
     }
 
     def create2(Long id) {
-        respond new FileUpload(params)
+        respond Album.get(id) || new Album(params)
     }
 
     def save(FileUpload fileUpload) {

@@ -9,7 +9,7 @@ class UrlMappings {
             }
         }
 
-        "/"(view:"/index")
+        "/"(controller: 'fileUpload', action: 'create2')
         "500"(view:'/error')
         "404"(view:'/notFound')
     }

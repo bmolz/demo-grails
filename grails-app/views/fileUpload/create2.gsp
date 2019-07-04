@@ -16,6 +16,9 @@
 <g:if test="${!params.id}">
     <input id="reportName" type="text" placeholder="Enter a name for the Album">
 </g:if>
+<g:else>
+    <h2>${album?.name}</h2>
+</g:else>
 
 <!-- The file upload form used as target for the file upload widget -->
 <div id="uploaddropzone" class="dropzone"></div>
@@ -41,12 +44,59 @@
             file.status = "queued";
         }});
 
+
+    // Create the mock file:
+
+    let mockFile = { name: "Filename", size: 12345 };
+    myDropzone.emit("addedfile", mockFile);
+    myDropzone.emit("thumbnail", mockFile, "/image/url");
+    myDropzone.createThumbnailFromUrl(file, imageUrl, callback, crossOrigin);
+    myDropzone.emit("complete", mockFile);
+
+    // Load existing files:
+    if(reportId !== 'none') {
+        // $('#fileupload').addClass('fileupload-processing');
+        $.ajax({
+            url: $('#fileupload').fileupload('option', 'url'),
+            dataType: 'json',
+            context: $('#fileupload')[0]
+        }).always(function () {
+            $(this).removeClass('fileupload-processing');
+        }).done(function (result) {
+            $(this).fileupload('option', 'done')
+                .call(this, $.Event('done'), {result: result});
+        });
+    }
+
+
     function getReportId() {
         $.post("${createLink(controller: 'Album', action:'save', absolute: true)}",
             {"name": $('#reportName').val()}).done(
             function (data) {
                 reportId = data.id;
+                window.history.replaceState( {} , '', updateURLParameter(window.location.href, 'id', reportId));
             });
+    }
+
+    // url helper function
+    // From http://stackoverflow.com/a/10997390/11236
+    function updateURLParameter(url, param, paramVal){
+        let newAdditionalURL = "";
+        let tempArray = url.split("?");
+        let baseURL = tempArray[0];
+        let additionalURL = tempArray[1];
+        let temp = "";
+        if (additionalURL) {
+            tempArray = additionalURL.split("&");
+            for (let i=0; i<tempArray.length; i++){
+                if(tempArray[i].split('=')[0] !== param){
+                    newAdditionalURL += temp + tempArray[i];
+                    temp = "&";
+                }
+            }
+        }
+        let rows_txt = temp + "" + param + "=" + paramVal;
+        return baseURL + "?" + newAdditionalURL + rows_txt;
     }
 </script>
 </body>
